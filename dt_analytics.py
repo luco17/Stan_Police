@@ -81,3 +81,47 @@ print(ri.frisk.dtype)
 
 # Take the sum of 'frisk'
 print(ri.frisk.sum())
+
+# Create a DataFrame of stops in which a search was conducted
+searched = ri[(ri.search_conducted == True)]
+
+# Calculate the overall frisk rate by taking the mean of 'frisk'
+print(searched.frisk.mean())
+
+# Calculate the frisk rate for each gender
+print(searched.groupby(['driver_gender']).frisk.mean())
+
+# Calculate the overall arrest rate
+print(ri.is_arrested.mean())
+
+# Calculate the hourly arrest rate
+print(ri.groupby([ri.index.hour]).is_arrested.mean())
+
+# Save the hourly arrest rate
+hourly_arrest_rate = ri.groupby([ri.index.hour]).is_arrested.mean()
+
+# Import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
+
+# Create a line plot of 'hourly_arrest_rate'
+hourly_arrest_rate.plot()
+
+# Add the xlabel, ylabel, and title
+plt.xlabel('Hour')
+plt.ylabel('Arrest Rate')
+plt.title('Arrest Rate by Time of Day')
+
+# Display the plot
+plt.show()
+
+# Calculate and save the annual search rate
+annual_search_rate = ri.search_conducted.resample('A').mean()
+
+# Concatenate 'annual_drug_rate' and 'annual_search_rate'
+annual = pd.concat([annual_drug_rate, annual_search_rate], axis = 'columns')
+
+# Create subplots from 'annual'
+annual.plot(subplots = True)
+
+# Display the subplots
+plt.show()
