@@ -114,6 +114,21 @@ plt.title('Arrest Rate by Time of Day')
 # Display the plot
 plt.show()
 
+# Calculate the annual rate of drug-related stop
+print(ri.drugs_related_stop.resample('A').mean())
+
+# Save the annual rate of drug-related stops
+annual_drug_rate = ri.drugs_related_stop.resample('A').mean()
+
+# Create a line plot of 'annual_drug_rate'
+annual_drug_rate.plot()
+
+# Display the plot
+plt.show()
+
+#Converting the data type of 'search_conducted' to allow resample operations
+ri['search_conducted'] = ri.search_conducted.astype('bool')
+
 # Calculate and save the annual search rate
 annual_search_rate = ri.search_conducted.resample('A').mean()
 
@@ -124,4 +139,46 @@ annual = pd.concat([annual_drug_rate, annual_search_rate], axis = 'columns')
 annual.plot(subplots = True)
 
 # Display the subplots
+plt.show()
+# Create a frequency table of districts and violations (using pd.crosstab)
+print(pd.crosstab(ri.district, ri.violation))
+
+# Save the frequency table as 'all_zones'
+all_zones = pd.crosstab(ri.district, ri.violation)
+
+# Select rows 'Zone K1' through 'Zone K3'
+print(all_zones.loc['Zone K1': 'Zone K3'])
+
+# Save the smaller table as 'k_zones'
+k_zones = all_zones.loc['Zone K1': 'Zone K3']
+
+# Create a stacked bar plot of 'k_zones'
+k_zones.plot(kind = 'bar', stacked = True)
+
+# Display the plot
+plt.show()
+
+#changetype doesn't work with certain types of data, accordingly a custom change is executed using .map
+# Print the unique values in 'stop_duration'
+print(ri.stop_duration.unique())
+
+# Create a dictionary that maps strings to integers
+mapping = {"0-15 Min":8, "16-30 Min":23, "30+ Min":45}
+
+# Convert the 'stop_duration' strings to integers using the 'mapping'
+ri['stop_minutes'] = ri.stop_duration.map(mapping)
+
+# Print the unique values in 'stop_minutes'
+print(ri.stop_minutes.unique())
+
+# Calculate the mean 'stop_minutes' for each value in 'violation_raw'
+print(ri.groupby(['violation_raw']).stop_minutes.mean())
+
+# Save the resulting Series as 'stop_length'
+stop_length = ri.groupby(['violation_raw']).stop_minutes.mean()
+
+# Sort 'stop_length' by its values and create a horizontal bar plot
+stop_length.sort_values().plot(kind = 'barh')
+
+# Display the plot
 plt.show()
