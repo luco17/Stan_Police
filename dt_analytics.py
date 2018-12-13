@@ -58,6 +58,9 @@ print(male_and_speeding.stop_outcome.value_counts(normalize = True))
 # Check the data type of 'search_conducted'
 print(ri.search_conducted.dtype)
 
+#Converting the data type of 'search_conducted' to allow resample operations
+ri['search_conducted'] = ri.search_conducted.astype('bool')
+
 # Calculate the search rate by counting the values
 print(ri.search_conducted.value_counts(normalize = True))
 
@@ -100,9 +103,6 @@ print(ri.groupby([ri.index.hour]).is_arrested.mean())
 # Save the hourly arrest rate
 hourly_arrest_rate = ri.groupby([ri.index.hour]).is_arrested.mean()
 
-# Import matplotlib.pyplot as plt
-import matplotlib.pyplot as plt
-
 # Create a line plot of 'hourly_arrest_rate'
 hourly_arrest_rate.plot()
 
@@ -126,9 +126,6 @@ annual_drug_rate.plot()
 # Display the plot
 plt.show()
 
-#Converting the data type of 'search_conducted' to allow resample operations
-ri['search_conducted'] = ri.search_conducted.astype('bool')
-
 # Calculate and save the annual search rate
 annual_search_rate = ri.search_conducted.resample('A').mean()
 
@@ -138,8 +135,6 @@ annual = pd.concat([annual_drug_rate, annual_search_rate], axis = 'columns')
 # Create subplots from 'annual'
 annual.plot(subplots = True)
 
-# Display the subplots
-plt.show()
 # Create a frequency table of districts and violations (using pd.crosstab)
 print(pd.crosstab(ri.district, ri.violation))
 
@@ -180,5 +175,89 @@ stop_length = ri.groupby(['violation_raw']).stop_minutes.mean()
 # Sort 'stop_length' by its values and create a horizontal bar plot
 stop_length.sort_values().plot(kind = 'barh')
 
+###Working with the weather data####
+
+# Read 'weather.csv' into a DataFrame named 'weather'
+weather = pd.read_csv('ri_weather.csv')
+
+# Describe the temperature columns
+print(weather[['TMIN', 'TAVG', 'TMAX']].describe())
+
+# Create a box plot of the temperature columns
+weather[['TMIN', 'TAVG', 'TMAX']].plot(kind = "box")
+
 # Display the plot
 plt.show()
+
+# Create a 'TDIFF' column that represents temperature difference
+weather['TDIFF'] = weather.TMAX - weather.TMIN
+
+# Describe the 'TDIFF' column
+print(weather['TDIFF'].describe())
+
+# Create a histogram with 20 bins to visualize 'TDIFF'
+weather.TDIFF.plot(kind = 'hist', bins = 20)
+
+# Display the plot
+plt.show()
+
+# Copy 'WT01' through 'WT22' to a new DataFrame
+WT = weather.loc[:, 'WT01':'WT22']
+
+# Calculate the sum of each row in 'WT'
+weather['bad_conditions'] = WT.sum(axis = 'columns')
+
+# Replace missing values in 'bad_conditions' with '0'
+weather['bad_conditions'] = weather.bad_conditions.fillna(0).astype('int')
+
+# Create a histogram to visualize 'bad_conditions'
+weather.bad_conditions.plot(kind = 'hist')
+
+# Display the plot
+plt.show()
+
+# Count the unique values in 'bad_conditions' and sort the index
+print(weather.bad_conditions.value_counts().sort_index())
+
+# Create a dictionary that maps integers to strings
+mapping = {0:'good', 1:'bad', 2:'bad', 3:'bad', 4:'bad', 5:'worse', 6:'worse', 7:'worse', 8:'worse', 9:'worse'}
+
+# Convert the 'bad_conditions' integers to strings using the 'mapping'
+weather['rating'] = weather.bad_conditions.map(mapping)
+
+# Count the unique values in 'rating'
+print(weather.rating.value_counts())
+
+# Create a list of weather ratings in logical order
+cats = ['good', 'bad', 'worse']
+
+# Change the data type of 'rating' to category
+weather['rating'] = pd.Categorical(weather.rating, categories = cats, ordered = True)
+
+# Examine the head of 'rating'
+print(weather.rating.head())
+
+###Prep work for the merger between RI and Weather datasets###s
+# Reset the index of 'ri'
+ri.reset_index(inplace = True)
+
+# Examine the head of 'ri'
+print(ri.head())
+
+# Create a DataFrame from the 'DATE' and 'rating' columns
+weather_rating = weather[['DATE', 'rating']]
+
+# Examine the head of 'weather_rating'
+print(weather_rating.head())
+
+# Examine the shape of 'ri'
+print(ri.shape)
+
+# Merge 'ri' and 'weather_rating' using a left join
+ri_weather = pd.merge(left = ri, right = weather_rating, left_on='stop_date', right_on='DATE', how = 'left')
+
+# Examine the shape of 'ri_weather'
+print(ri_weather.shape)
+
+# Set 'stop_datetime' as the index of 'ri_weather'
+ri_weather.set_index('stop_datetime', inplace = True)
