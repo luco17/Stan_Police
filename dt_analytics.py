@@ -1,8 +1,9 @@
 import pandas as pd, os, numpy as np, matplotlib.pyplot as plt
+from datetime import datetime
 
 ri_raw = pd.read_csv("RI-clean.csv.gz", low_memory = False)
 
-ri_raw.shape
+ri_raw.dropna(subset = ['stop_date', 'stop_time'], inplace = True)
 
 ri = ri_raw.sample(n = 91741)
 
@@ -244,20 +245,27 @@ ri.reset_index(inplace = True)
 # Examine the head of 'ri'
 print(ri.head())
 
-# Create a DataFrame from the 'DATE' and 'rating' columns
-weather_rating = weather[['DATE', 'rating']]
+# Create a DataFrame from the 'DATE' and 'rating' columns, convert DATE to dt
+weather_rating = weather.loc[:,['DATE', 'rating']]
+weather_rating['DATE'] = pd.to_datetime(weather_rating['DATE'])
+weather_rating['DATE'] = weather_rating['DATE'].map(lambda x: datetime.strftime(x, '%Y-%m-%d'))
+weather_rating['DATE'] = weather_rating.DATE.astype('O')
 
-# Examine the head of 'weather_rating'
-print(weather_rating.head())
 
+ri.stop_date.head()
 # Examine the shape of 'ri'
 print(ri.shape)
 
 # Merge 'ri' and 'weather_rating' using a left join
-ri_weather = pd.merge(left = ri, right = weather_rating, left_on='stop_date', right_on='DATE', how = 'left')
+ri_weather = pd.merge(left = ri, right = weather_rating, left_on = 'stop_date', right_on = 'DATE', how = 'left')
 
 # Examine the shape of 'ri_weather'
 print(ri_weather.shape)
 
 # Set 'stop_datetime' as the index of 'ri_weather'
 ri_weather.set_index('stop_datetime', inplace = True)
+
+# Calculate the arrest rate for each 'violation' and 'rating'
+print(ri_weather.groupby(['violation', 'rating']).is_arrested.mean())
+
+ri_weather.head()
