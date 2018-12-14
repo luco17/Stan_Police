@@ -251,7 +251,7 @@ weather_rating['DATE'] = pd.to_datetime(weather_rating['DATE'])
 weather_rating['DATE'] = weather_rating['DATE'].map(lambda x: datetime.strftime(x, '%Y-%m-%d'))
 weather_rating['DATE'] = weather_rating.DATE.astype('O')
 
-
+weather_rating.DATE.head()
 ri.stop_date.head()
 # Examine the shape of 'ri'
 print(ri.shape)
@@ -268,4 +268,22 @@ ri_weather.set_index('stop_datetime', inplace = True)
 # Calculate the arrest rate for each 'violation' and 'rating'
 print(ri_weather.groupby(['violation', 'rating']).is_arrested.mean())
 
-ri_weather.head()
+###Working the multindex###
+arrest_rate = ri_weather.groupby(['violation', 'rating']).is_arrested.mean()
+
+# Print the 'arrest_rate' Series
+print(arrest_rate)
+
+# Print the arrest rate for moving violations in bad weather
+print(arrest_rate['Moving violation','bad'])
+
+# Print the arrest rates for speeding violations in all three weather conditions
+print(arrest_rate['Speeding'])
+
+###Dataframe manipulations using pivots, stacking and unstacking###
+
+# Unstack the 'arrest_rate' Series into a DataFrame
+print(arrest_rate.unstack())
+
+# Create the same DataFrame using a pivot table
+print(ri_weather.pivot_table(index = 'violation', columns = 'driver_gender', values = 'is_arrested'))
